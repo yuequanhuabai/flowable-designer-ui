@@ -1,6 +1,30 @@
-// 全局樣式佔位，Phase 3 補充完整
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+html, body, #app {
+  height: 100%;
+  font-family: "Microsoft YaHei", "微軟雅黑", sans-serif;
+}
+
+// 頁面卡片
+.page-card {
+  background: #fff;
+  border-radius: 4px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, .08);
+}
+
+// 搜索區域
+.search-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #ebeef5;
+  margin-bottom: 16px;
 }

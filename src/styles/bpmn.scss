@@ -1,0 +1,20 @@
+// bpmn-js 畫布容器必須設置高度
+.bpmn-canvas-container {
+  width: 100%;
+  height: calc(100vh - 180px);
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  background: #fff;
+}
+
+// 覆蓋 bpmn-js 默認工具提示樣式
+.djs-tooltip {
+  font-size: 12px;
+}
+
+// 選中元素高亮顏色
+.djs-element.selected .djs-outline {
+  stroke: #409EFF !important;
+}
