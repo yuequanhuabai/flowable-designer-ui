@@ -34,14 +34,17 @@ const canvasRef = ref<HTMLElement>()
 const modeler = shallowRef<BpmnModeler | null>(null)
 const selectedElement = shallowRef<any>(null)
 
-// 默認空白流程 XML
+// 默認空白流程 XML（必須包含 BPMNDiagram/BPMNPlane，否則 palette 拖拽找不到根容器）
 const DEFAULT_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
              xmlns:flowable="http://flowable.org/bpmn"
              targetNamespace="http://flowable.org/test">
-  <process id="new-process" name="新建流程" isExecutable="true">
-    <startEvent id="startEvent" name="開始" />
-  </process>
+  <process id="Process_1" name="新建流程" isExecutable="true" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1" />
+  </bpmndi:BPMNDiagram>
 </definitions>`
 
 onMounted(async () => {
@@ -94,7 +97,6 @@ async function handleImport(xml: string) {
   flex: 1;
   border: 1px solid #dcdfe6;
   border-radius: 4px;
-  overflow: hidden;
 }
 .properties-panel {
   position: absolute;

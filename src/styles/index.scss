@@ -18,6 +18,8 @@ html, body, #app {
   box-shadow: 0 1px 4px rgba(0, 21, 41, .08);
 }
 
+@import './bpmn.scss';
+
 // 搜索區域
 .search-bar {
   display: flex;
