@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, shallowRef, markRaw, onMounted, onBeforeUnmount } from 'vue'
 import BpmnModeler from 'bpmn-js/lib/Modeler'
 import { ElMessage } from 'element-plus'
 import flowableModdle from './FlowableModdle.json'
@@ -30,8 +30,9 @@ import PropertiesPanel from '@/components/PropertiesPanel/index.vue'
 import { deployByXml } from '@/api/process'
 
 const canvasRef = ref<HTMLElement>()
-const modeler = ref<BpmnModeler | null>(null)
-const selectedElement = ref<any>(null)
+// shallowRef + markRaw：防止 Vue 深層 Proxy 破壞 bpmn-js 內部事件系統
+const modeler = shallowRef<BpmnModeler | null>(null)
+const selectedElement = shallowRef<any>(null)
 
 // 默認空白流程 XML
 const DEFAULT_XML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -44,12 +45,12 @@ const DEFAULT_XML = `<?xml version="1.0" encoding="UTF-8"?>
 </definitions>`
 
 onMounted(async () => {
-  modeler.value = new BpmnModeler({
+  modeler.value = markRaw(new BpmnModeler({
     container: canvasRef.value!,
     moddleExtensions: {
       flowable: flowableModdle
     }
-  })
+  }))
 
   // 加載默認空白流程
   await modeler.value.importXML(DEFAULT_XML)
