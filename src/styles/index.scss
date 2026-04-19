@@ -1,3 +1,5 @@
+@use './bpmn.scss';
+
 * {
   margin: 0;
   padding: 0;
@@ -17,8 +19,6 @@ html, body, #app {
   margin-bottom: 16px;
   box-shadow: 0 1px 4px rgba(0, 21, 41, .08);
 }
-
-@use './bpmn.scss';
 
 // 搜索區域
 .search-bar {
