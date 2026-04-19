@@ -17,7 +17,7 @@
           :modeler="modeler"
       />
       <UserTaskPanel
-          v-else-if="elementType === 'UserTask'"
+          v-else-if="elementType === 'UserTask' || elementType === 'Task'"
           :element="element"
           :modeler="modeler"
       />
@@ -51,6 +51,7 @@ const TYPE_LABEL: Record<string, string> = {
   Process: '流程',
   StartEvent: '開始事件',
   EndEvent: '結束事件',
+  Task: '任務（建議改為用戶任務）',
   UserTask: '用戶任務',
   ServiceTask: '服務任務',
   ExclusiveGateway: '排他網關',

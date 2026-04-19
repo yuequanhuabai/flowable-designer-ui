@@ -1,4 +1,18 @@
 <template>
+  <div>
+    <!-- bpmn:Task 時提示轉換 -->
+    <el-alert
+      v-if="isPlainTask"
+      title="當前為普通任務，建議轉換為「用戶任務」以支持 Flowable 分配屬性"
+      type="warning"
+      :closable="false"
+      style="margin-bottom:12px"
+    >
+      <el-button size="small" type="primary" style="margin-top:6px" @click="convertToUserTask">
+        一鍵轉為用戶任務
+      </el-button>
+    </el-alert>
+
   <el-form :model="form" label-width="90px" size="small">
 
     <el-form-item label="任務名稱">
@@ -82,12 +96,21 @@
     </el-form-item>
 
   </el-form>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { reactive, computed, watch } from 'vue'
 
 const props = defineProps<{ element: any; modeler: any }>()
+
+const isPlainTask = computed(() => props.element?.type === 'bpmn:Task')
+
+function convertToUserTask() {
+  const bpmnReplace = props.modeler?.get('bpmnReplace')
+  if (!bpmnReplace) return
+  bpmnReplace.replaceElement(props.element, { type: 'bpmn:UserTask' })
+}
 
 const form = reactive({
   id: '',
