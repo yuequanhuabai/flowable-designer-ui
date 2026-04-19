@@ -37,13 +37,6 @@
         { "name": "delegateExpression", "isAttr": true, "type": "String" },
         { "name": "async", "isAttr": true, "type": "Boolean" }
       ]
-    },
-    {
-      "name": "SequenceFlow",
-      "extends": ["bpmn:SequenceFlow"],
-      "properties": [
-        { "name": "conditionExpression", "type": "bpmn:FormalExpression" }
-      ]
     }
   ]
 }
