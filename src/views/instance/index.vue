@@ -60,7 +60,6 @@
         <FormRenderer
           ref="formRendererRef"
           :schema="startFormSchema"
-          v-model="startFormData"
         />
       </div>
 
@@ -132,10 +131,11 @@ async function handleStart() {
     if (!valid) return
   }
 
+  const formValues = formRendererRef.value?.getValues() ?? {}
   await startProcess({
     processKey: startForm.value.processKey,
     businessKey: startForm.value.businessKey,
-    variables: { ...startFormData.value }
+    variables: { ...formValues }
   })
   ElMessage.success('流程發起成功')
   showStartDialog.value = false

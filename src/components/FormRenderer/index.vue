@@ -68,11 +68,11 @@ watch(() => props.schema, (schema) => {
   })
 }, { immediate: true })
 
+// 僅在初始化時從外部同步一次（如編輯場景），之後 formData 自己管自己
+// 不做雙向 watch，避免 el-input-number blur 時因異步時序讀到舊 prop 而清空顯示值
 watch(() => props.modelValue, (v) => {
   if (v) Object.assign(formData, v)
-}, { immediate: true })
-
-watch(formData, (v) => emit('update:modelValue', { ...v }), { deep: true })
+}, { immediate: true, once: true })
 
 function getComponent(type: string) { return FIELD_MAP[type] || InputField }
 
