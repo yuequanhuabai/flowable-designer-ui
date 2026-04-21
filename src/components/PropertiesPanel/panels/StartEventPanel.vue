@@ -51,7 +51,11 @@ const form = reactive({ id: '', name: '', initiator: '', formKey: '' })
 const formList = ref<FormDefinitionVO[]>([])
 
 onMounted(async () => {
-  formList.value = await listForms()
+  try {
+    formList.value = await listForms()
+  } catch {
+    // 表單服務不可用時靜默跳過
+  }
 })
 
 watch(() => props.element, (el) => {

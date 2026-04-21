@@ -1,17 +1,17 @@
 <template>
   <div class="canvas-wrapper">
-    <div v-if="fields.length === 0" class="canvas-empty">
+    <div v-if="localFields.length === 0" class="canvas-empty">
       <el-icon size="40" color="#c0c4cc"><Plus /></el-icon>
       <p>從左側拖入字段開始設計</p>
     </div>
 
     <draggable
-      v-else
       :list="localFields"
       group="fields"
       item-key="id"
       handle=".drag-handle"
-      @change="onChange"
+      :class="{ 'empty-drop-zone': localFields.length === 0 }"
+      @change="onDraggableChange"
     >
       <template #item="{ element }">
         <div
@@ -37,23 +37,11 @@
         </div>
       </template>
     </draggable>
-
-    <!-- 空畫布也需要 draggable 接收拖入 -->
-    <draggable
-      v-if="fields.length === 0"
-      :list="localFields"
-      group="fields"
-      item-key="id"
-      class="empty-drop-zone"
-      @change="onChange"
-    >
-      <template #item><span /></template>
-    </draggable>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, watch } from 'vue'
 import draggable from 'vuedraggable'
 import type { FormField } from '@/api/types/workflow'
 import InputField from './fields/InputField.vue'
@@ -77,19 +65,25 @@ const emit = defineEmits<{
   (e: 'select', id: string | null): void
 }>()
 
-const localFields = computed({
-  get: () => props.fields,
-  set: (v) => emit('update:fields', v)
+// 用本地 ref 讓 vuedraggable 可直接 splice 操作，再 watch 同步到父組件
+const localFields = ref<FormField[]>([...props.fields])
+
+watch(() => props.fields, (v) => {
+  localFields.value = v
 })
+
+watch(localFields, (v) => {
+  emit('update:fields', [...v])
+}, { deep: true })
 
 function getFieldComponent(type: string) { return FIELD_MAP[type] || InputField }
 
 function removeField(id: string) {
-  emit('update:fields', props.fields.filter(f => f.id !== id))
+  localFields.value = localFields.value.filter(f => f.id !== id)
   if (props.selectedId === id) emit('select', null)
 }
 
-function onChange() {
+function onDraggableChange() {
   emit('update:fields', [...localFields.value])
 }
 </script>
