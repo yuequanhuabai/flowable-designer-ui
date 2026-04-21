@@ -1,16 +1,10 @@
 <template>
   <div class="canvas-wrapper">
-    <div v-if="localFields.length === 0" class="canvas-empty">
-      <el-icon size="40" color="#c0c4cc"><Plus /></el-icon>
-      <p>從左側拖入字段開始設計</p>
-    </div>
-
     <draggable
       :list="localFields"
       group="fields"
       item-key="id"
-      handle=".drag-handle"
-      :class="{ 'empty-drop-zone': localFields.length === 0 }"
+      class="canvas-drop-zone"
       @change="onDraggableChange"
     >
       <template #item="{ element }">
@@ -34,6 +28,13 @@
           <el-icon class="delete-btn" @click.stop="removeField(element.id)">
             <Delete />
           </el-icon>
+        </div>
+      </template>
+
+      <template #footer>
+        <div v-if="localFields.length === 0" class="canvas-empty">
+          <el-icon size="40" color="#c0c4cc"><Plus /></el-icon>
+          <p>從左側拖入字段開始設計</p>
         </div>
       </template>
     </draggable>
@@ -65,22 +66,23 @@ const emit = defineEmits<{
   (e: 'select', id: string | null): void
 }>()
 
-const localFields = ref<FormField[]>([...props.fields])
+const localFields = ref<FormField[]>([])
 
-// 父組件初始化數據（如從後端加載）時同步進來，始終用展開副本避免共享引用
+// splice 原地修改，保持 localFields.value 的數組引用不變
+// vuedraggable 內部 Sortable 實例持有這個引用，替換會導致後續拖入失效
 watch(() => props.fields, (v) => {
-  localFields.value = [...v]
-})
+  localFields.value.splice(0, localFields.value.length, ...v)
+}, { immediate: true })
 
 function getFieldComponent(type: string) { return FIELD_MAP[type] || InputField }
 
 function removeField(id: string) {
-  localFields.value = localFields.value.filter(f => f.id !== id)
+  const idx = localFields.value.findIndex(f => f.id === id)
+  if (idx !== -1) localFields.value.splice(idx, 1)
   emit('update:fields', [...localFields.value])
   if (props.selectedId === id) emit('select', null)
 }
 
-// vuedraggable 拖入/排序後觸發，顯式 emit 給父組件
 function onDraggableChange() {
   emit('update:fields', [...localFields.value])
 }
@@ -89,7 +91,10 @@ function onDraggableChange() {
 <style scoped lang="scss">
 .canvas-wrapper {
   min-height: 100%;
-  position: relative;
+}
+.canvas-drop-zone {
+  min-height: 300px;
+  height: 100%;
 }
 .canvas-empty {
   display: flex;
@@ -100,11 +105,7 @@ function onDraggableChange() {
   color: #c0c4cc;
   font-size: 14px;
   gap: 8px;
-}
-.empty-drop-zone {
-  position: absolute;
-  inset: 0;
-  min-height: 300px;
+  pointer-events: none;
 }
 .canvas-field {
   display: flex;
