@@ -47,3 +47,37 @@ export interface CompleteTaskRequest {
     comment?: string
     variables?: Record<string, any>
 }
+
+// ========== 表單設計器 ==========
+
+export interface FormField {
+    id: string
+    type: 'input' | 'textarea' | 'number' | 'select' | 'radio' | 'checkbox' | 'date' | 'upload'
+    label: string
+    field: string
+    required: boolean
+    placeholder?: string
+    defaultValue?: string
+    options?: { label: string; value: string }[]
+    min?: number
+    max?: number
+    dateFormat?: string
+    accept?: string
+    maxSize?: number
+}
+
+export interface FormSchema {
+    formKey: string
+    name: string
+    fields: FormField[]
+}
+
+export interface FormDefinitionVO {
+    id: string
+    formKey: string
+    name: string
+    schemaJson: string
+    version: number
+    createTime?: string
+    updateTime?: string
+}

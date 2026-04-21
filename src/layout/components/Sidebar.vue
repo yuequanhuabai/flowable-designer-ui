@@ -31,7 +31,7 @@ const isCollapse = inject('isCollapse', false)
 
 const menuRoutes = computed(() => {
   const rootRoute = router.getRoutes().find(r => r.path === '/')
-  return rootRoute?.children || []
+  return (rootRoute?.children || []).filter(r => r.meta?.title && !r.path.includes(':'))
 })
 
 const activeMenu = computed(() => route.path)
