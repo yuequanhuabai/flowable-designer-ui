@@ -73,6 +73,15 @@ export interface FormSchema {
     fields: FormField[]
 }
 
+export interface ProcessDraftVO {
+    id: string
+    name: string
+    processKey: string
+    bpmnXml: string
+    createTime?: string
+    updateTime?: string
+}
+
 export interface FormDefinitionVO {
     id: string
     formKey: string

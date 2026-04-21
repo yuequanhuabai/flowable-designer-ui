@@ -16,6 +16,12 @@ const router = createRouter({
                     meta: { title: '流程設計器', icon: 'Edit' }
                 },
                 {
+                    path: 'designer/editor/:id',
+                    name: 'DesignerEditor',
+                    component: () => import('@/views/designer/editor/index.vue'),
+                    meta: { title: '流程編輯器' }
+                },
+                {
                     path: 'process',
                     name: 'Process',
                     component: () => import('@/views/process/index.vue'),

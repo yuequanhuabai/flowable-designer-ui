@@ -1,16 +1,13 @@
 <template>
   <div class="designer-container">
-    <!-- 工具欄 -->
     <DesignerToolbar
         :modeler="modeler"
+        :draft-name="draftName"
+        @save="handleSave"
         @deploy="handleDeploy"
         @import="handleImport"
     />
-
-    <!-- bpmn-js 畫布 -->
     <div ref="canvasRef" class="bpmn-canvas-container" />
-
-    <!-- 屬性面板（右側） -->
     <PropertiesPanel
         v-if="selectedElement"
         :element="selectedElement"
@@ -21,20 +18,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, shallowRef, markRaw, onMounted, onBeforeUnmount } from 'vue'
+import { ref, shallowRef, markRaw, onMounted, onBeforeUnmount, watch } from 'vue'
 import BpmnModeler from 'bpmn-js/lib/Modeler'
-import { ElMessage } from 'element-plus'
 import flowableModdle from './FlowableModdle.json'
 import DesignerToolbar from './toolbar.vue'
 import PropertiesPanel from '@/components/PropertiesPanel/index.vue'
-import { deployByXml } from '@/api/process'
+
+const props = defineProps<{
+  initialXml?: string
+  draftName?: string
+}>()
+
+const emit = defineEmits<{
+  (e: 'save', xml: string): void
+  (e: 'deploy', payload: { name: string; xml: string }): void
+}>()
 
 const canvasRef = ref<HTMLElement>()
-// shallowRef + markRaw：防止 Vue 深層 Proxy 破壞 bpmn-js 內部事件系統
 const modeler = shallowRef<BpmnModeler | null>(null)
 const selectedElement = shallowRef<any>(null)
 
-// 默認空白流程 XML（必須包含 BPMNDiagram/BPMNPlane，否則 palette 拖拽找不到根容器）
 const DEFAULT_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
              xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
@@ -50,37 +53,40 @@ const DEFAULT_XML = `<?xml version="1.0" encoding="UTF-8"?>
 onMounted(async () => {
   modeler.value = markRaw(new BpmnModeler({
     container: canvasRef.value!,
-    moddleExtensions: {
-      flowable: flowableModdle
-    }
+    moddleExtensions: { flowable: flowableModdle }
   }))
 
-  // 加載默認空白流程
-  await modeler.value.importXML(DEFAULT_XML)
+  await modeler.value.importXML(props.initialXml || DEFAULT_XML)
 
-  // 監聽元素選中事件，驅動屬性面板
   const eventBus = modeler.value.get('eventBus') as any
   eventBus.on('selection.changed', ({ newSelection }: any) => {
     selectedElement.value = newSelection[0] || null
   })
 })
 
+// 父組件異步加載完 initialXml 後重新導入
+watch(() => props.initialXml, async (xml) => {
+  if (xml && modeler.value) {
+    await modeler.value.importXML(xml)
+  }
+})
+
 onBeforeUnmount(() => {
   modeler.value?.destroy()
 })
 
-// 部署流程到後端
+async function handleSave() {
+  if (!modeler.value) return
+  const { xml } = await modeler.value.saveXML({ format: true })
+  emit('save', xml!)
+}
+
 async function handleDeploy(name: string) {
   if (!modeler.value) return
   const { xml } = await modeler.value.saveXML({ format: true })
-  // 從 XML 中提取 process id 作為 processKey
-  const match = xml?.match(/process id="([^"]+)"/)
-  const processKey = match?.[1] || 'process-' + Date.now()
-  await deployByXml(name, processKey, xml!)
-  ElMessage.success('流程部署成功')
+  emit('deploy', { name, xml: xml! })
 }
 
-// 導入 BPMN 文件
 async function handleImport(xml: string) {
   await modeler.value?.importXML(xml)
 }

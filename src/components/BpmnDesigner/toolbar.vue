@@ -53,15 +53,16 @@
 import { ref } from 'vue'
 import type BpmnModeler from 'bpmn-js/lib/Modeler'
 
-const props = defineProps<{ modeler: BpmnModeler | null }>()
+const props = defineProps<{ modeler: BpmnModeler | null; draftName?: string }>()
 const emit = defineEmits<{
+  (e: 'save'): void
   (e: 'deploy', name: string): void
   (e: 'import', xml: string): void
 }>()
 
 const fileInput = ref<HTMLInputElement>()
 const showDeployDialog = ref(false)
-const deployForm = ref({ name: '' })
+const deployForm = ref({ name: props.draftName || '' })
 
 const EMPTY_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
@@ -101,9 +102,8 @@ async function handleExport() {
   URL.revokeObjectURL(url)
 }
 
-async function handleSave() {
-  const { xml } = await props.modeler!.saveXML({ format: true })
-  console.log('當前 BPMN XML：', xml)
+function handleSave() {
+  emit('save')
 }
 
 function handleZoomIn() {
