@@ -1,8 +1,8 @@
 <template>
   <el-input-number
     :model-value="preview ? null : (modelValue ?? null)"
-    :min="field.min"
-    :max="field.max"
+    :min="field.min ?? -Infinity"
+    :max="field.max ?? Infinity"
     :placeholder="field.placeholder"
     :disabled="preview"
     controls-position="right"
