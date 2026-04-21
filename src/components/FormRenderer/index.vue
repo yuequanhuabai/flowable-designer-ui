@@ -55,6 +55,19 @@ const emit = defineEmits<{
 const formRef = ref<FormInstance>()
 const formData = reactive<Record<string, any>>({})
 
+// schema 加載時為每個字段預初始化默認值，確保 el-input-number 等受控組件
+// 從一開始就拿到 null/'' 而非 undefined，避免 blur 時值被清空
+watch(() => props.schema, (schema) => {
+  if (!schema?.fields) return
+  schema.fields.forEach(f => {
+    if (!(f.field in formData)) {
+      if (f.type === 'checkbox') formData[f.field] = []
+      else if (f.type === 'number') formData[f.field] = null
+      else formData[f.field] = ''
+    }
+  })
+}, { immediate: true })
+
 watch(() => props.modelValue, (v) => {
   if (v) Object.assign(formData, v)
 }, { immediate: true })

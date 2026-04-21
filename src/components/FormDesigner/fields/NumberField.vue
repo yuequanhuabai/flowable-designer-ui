@@ -1,6 +1,6 @@
 <template>
   <el-input-number
-    :model-value="preview ? undefined : modelValue"
+    :model-value="preview ? null : (modelValue ?? null)"
     :min="field.min"
     :max="field.max"
     :placeholder="field.placeholder"
