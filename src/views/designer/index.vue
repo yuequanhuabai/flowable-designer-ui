@@ -83,6 +83,8 @@ async function fetchList() {
   loading.value = true
   try {
     tableData.value = await listDrafts()
+  } catch {
+    // 後端未就緒時靜默跳過，不讓頁面崩潰
   } finally {
     loading.value = false
   }
