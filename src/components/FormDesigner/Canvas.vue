@@ -65,24 +65,22 @@ const emit = defineEmits<{
   (e: 'select', id: string | null): void
 }>()
 
-// 用本地 ref 讓 vuedraggable 可直接 splice 操作，再 watch 同步到父組件
 const localFields = ref<FormField[]>([...props.fields])
 
+// 父組件初始化數據（如從後端加載）時同步進來，始終用展開副本避免共享引用
 watch(() => props.fields, (v) => {
-  localFields.value = v
+  localFields.value = [...v]
 })
-
-watch(localFields, (v) => {
-  emit('update:fields', [...v])
-}, { deep: true })
 
 function getFieldComponent(type: string) { return FIELD_MAP[type] || InputField }
 
 function removeField(id: string) {
   localFields.value = localFields.value.filter(f => f.id !== id)
+  emit('update:fields', [...localFields.value])
   if (props.selectedId === id) emit('select', null)
 }
 
+// vuedraggable 拖入/排序後觸發，顯式 emit 給父組件
 function onDraggableChange() {
   emit('update:fields', [...localFields.value])
 }
