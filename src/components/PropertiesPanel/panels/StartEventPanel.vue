@@ -15,28 +15,44 @@
         placeholder="如：initiator"
         @change="updateFlowableProperty('initiator', form.initiator)"
       />
-      <div class="tip">流程啓動時自動將發起人寫入此變量，後續任務可用 ${initiator} 引用</div>
+      <div class="tip">流程啓動時自動將發起人寫入此變量</div>
     </el-form-item>
 
     <el-divider content-position="left">發起表單</el-divider>
 
     <el-form-item label="表單 Key">
-      <el-input
+      <el-select
         v-model="form.formKey"
-        placeholder="如：apply-form"
+        placeholder="選擇關聯表單"
+        clearable
+        style="width:100%"
         @change="updateFlowableProperty('formKey', form.formKey)"
-      />
-      <div class="tip">業務系統根據此 Key 渲染發起流程時的填寫表單</div>
+      >
+        <el-option
+          v-for="f in formList"
+          :key="f.formKey"
+          :label="`${f.name}（${f.formKey}）`"
+          :value="f.formKey"
+        />
+      </el-select>
+      <div class="tip">選擇發起流程時需要填寫的表單</div>
     </el-form-item>
   </el-form>
 </template>
 
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { reactive, ref, watch, onMounted } from 'vue'
+import { listForms } from '@/api/form'
+import type { FormDefinitionVO } from '@/api/types/workflow'
 
 const props = defineProps<{ element: any; modeler: any }>()
 
 const form = reactive({ id: '', name: '', initiator: '', formKey: '' })
+const formList = ref<FormDefinitionVO[]>([])
+
+onMounted(async () => {
+  formList.value = await listForms()
+})
 
 watch(() => props.element, (el) => {
   if (!el) return

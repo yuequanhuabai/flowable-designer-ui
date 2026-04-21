@@ -7,6 +7,7 @@ export interface ProcessDefinitionVO {
     deploymentId: string
     resourceName: string
     suspended: boolean
+    formKey?: string
 }
 
 // 流程實例

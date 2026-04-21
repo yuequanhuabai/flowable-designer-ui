@@ -38,20 +38,32 @@
     </div>
 
     <!-- 發起流程對話框 -->
-    <el-dialog v-model="showStartDialog" title="發起流程" width="500px">
+    <el-dialog v-model="showStartDialog" title="發起流程" width="560px" destroy-on-close>
       <el-form :model="startForm" label-width="90px">
         <el-form-item label="選擇流程" required>
-          <el-select v-model="startForm.processKey" style="width:100%">
+          <el-select
+            v-model="startForm.processKey"
+            style="width:100%"
+            @change="onProcessChange"
+          >
             <el-option v-for="d in definitions" :key="d.key" :label="d.name" :value="d.key" />
           </el-select>
         </el-form-item>
         <el-form-item label="業務 Key">
           <el-input v-model="startForm.businessKey" placeholder="如訂單號、請假單號" />
         </el-form-item>
-        <el-form-item label="審批人">
-          <el-input v-model="startForm.manager" placeholder="流程變量 manager" />
-        </el-form-item>
       </el-form>
+
+      <!-- 動態渲染表單字段 -->
+      <div v-if="startFormSchema" style="margin-top:8px">
+        <el-divider content-position="left">填寫申請信息</el-divider>
+        <FormRenderer
+          ref="formRendererRef"
+          :schema="startFormSchema"
+          v-model="startFormData"
+        />
+      </div>
+
       <template #footer>
         <el-button @click="showStartDialog = false">取消</el-button>
         <el-button type="primary" @click="handleStart">確認發起</el-button>
@@ -71,15 +83,21 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { listInstances, startProcess, suspendInstance, activateInstance, deleteInstance } from '@/api/instance'
 import { listProcessDefinitions } from '@/api/process'
 import { getDiagramUrl } from '@/api/history'
-import type { ProcessDefinitionVO, ProcessInstanceVO } from '@/api/types/workflow'
+import { getFormByKey, parseSchema } from '@/api/form'
+import FormRenderer from '@/components/FormRenderer/index.vue'
+import type { ProcessDefinitionVO, ProcessInstanceVO, FormSchema } from '@/api/types/workflow'
 
 const loading = ref(false)
 const tableData = ref<ProcessInstanceVO[]>([])
 const definitions = ref<ProcessDefinitionVO[]>([])
 const queryForm = ref({ processKey: '' })
 const showStartDialog = ref(false)
-const startForm = ref({ processKey: '', businessKey: '', manager: '' })
+const startForm = ref({ processKey: '', businessKey: '' })
 const diagramDialog = ref({ visible: false, url: '' })
+
+const formRendererRef = ref<InstanceType<typeof FormRenderer>>()
+const startFormSchema = ref<FormSchema | null>(null)
+const startFormData = ref<Record<string, any>>({})
 
 onMounted(async () => {
   definitions.value = await listProcessDefinitions()
@@ -95,11 +113,29 @@ async function fetchList() {
   }
 }
 
+async function onProcessChange(processKey: string) {
+  startFormSchema.value = null
+  startFormData.value = {}
+  const def = definitions.value.find(d => d.key === processKey)
+  if (!def?.formKey) return
+  try {
+    const vo = await getFormByKey(def.formKey)
+    if (vo) startFormSchema.value = parseSchema(vo)
+  } catch {
+    // 未配置表單，靜默跳過
+  }
+}
+
 async function handleStart() {
+  if (formRendererRef.value) {
+    const valid = await formRendererRef.value.validate()
+    if (!valid) return
+  }
+
   await startProcess({
     processKey: startForm.value.processKey,
     businessKey: startForm.value.businessKey,
-    variables: { manager: startForm.value.manager }
+    variables: { ...startFormData.value }
   })
   ElMessage.success('流程發起成功')
   showStartDialog.value = false
