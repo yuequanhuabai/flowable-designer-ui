@@ -30,8 +30,8 @@ const router = useRouter()
 const isCollapse = inject('isCollapse', false)
 
 const menuRoutes = computed(() => {
-  const rootRoute = router.getRoutes().find(r => r.path === '/')
-  return (rootRoute?.children || []).filter(r => r.meta?.title && !r.path.includes(':'))
+  return router.getRoutes()
+    .filter(r => r.meta?.title && !r.path.includes(':') && r.path !== '/')
 })
 
 const activeMenu = computed(() => route.path)
