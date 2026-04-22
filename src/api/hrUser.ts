@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import axios from 'axios'
 
 export interface HrUser {
   userId: number
@@ -12,10 +12,17 @@ export interface HrRole {
   roleKey: string
 }
 
+const hrRequest = axios.create({ timeout: 10000 })
+
+hrRequest.interceptors.response.use(
+  (res) => (res.data?.code === 200 ? res.data.data : Promise.reject(res.data)),
+  (err) => Promise.reject(err)
+)
+
 export function listHrUsers(): Promise<HrUser[]> {
-  return request.get('/hr-api/internal/user/simple-list')
+  return hrRequest.get('/hr-api/internal/user/simple-list')
 }
 
 export function listHrRoles(): Promise<HrRole[]> {
-  return request.get('/hr-api/internal/role/simple-list')
+  return hrRequest.get('/hr-api/internal/role/simple-list')
 }
