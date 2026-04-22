@@ -36,19 +36,52 @@
 
     <!-- 指定用戶 -->
     <el-form-item v-if="form.assignType === 'assignee'" label="辦理人">
+      <el-select
+        v-if="hrUsersAvailable"
+        v-model="form.assignee"
+        filterable
+        clearable
+        placeholder="選擇用戶"
+        style="width:100%"
+        @change="updateFlowableProperty('assignee', form.assignee)"
+      >
+        <el-option
+          v-for="u in hrUsers"
+          :key="u.username"
+          :label="`${u.nickname}（${u.username}）`"
+          :value="u.username"
+        />
+      </el-select>
       <el-input
+        v-else
         v-model="form.assignee"
         placeholder="用戶名 或 ${變量名}"
         @change="updateFlowableProperty('assignee', form.assignee)"
       />
-      <div class="tip">
-        固定用戶：zhangsan　　流程變量：${approver1}
-      </div>
+      <div class="tip">固定用戶：zhangsan　　流程變量：${approver1}</div>
     </el-form-item>
 
     <!-- 候選用戶（多人搶佔） -->
     <el-form-item v-if="form.assignType === 'candidateUsers'" label="候選用戶">
+      <el-select
+        v-if="hrUsersAvailable"
+        v-model="candidateUsersArr"
+        multiple
+        filterable
+        clearable
+        placeholder="選擇候選用戶"
+        style="width:100%"
+        @change="onCandidateUsersChange"
+      >
+        <el-option
+          v-for="u in hrUsers"
+          :key="u.username"
+          :label="`${u.nickname}（${u.username}）`"
+          :value="u.username"
+        />
+      </el-select>
       <el-input
+        v-else
         v-model="form.candidateUsers"
         placeholder="多個用逗號分隔：user1,user2"
         @change="updateFlowableProperty('candidateUsers', form.candidateUsers)"
@@ -58,14 +91,30 @@
 
     <!-- 候選角色（按角色/組分配） -->
     <el-form-item v-if="form.assignType === 'candidateGroups'" label="角色/組">
+      <el-select
+        v-if="hrRolesAvailable"
+        v-model="candidateGroupsArr"
+        multiple
+        filterable
+        clearable
+        placeholder="選擇候選角色"
+        style="width:100%"
+        @change="onCandidateGroupsChange"
+      >
+        <el-option
+          v-for="r in hrRoles"
+          :key="r.roleKey"
+          :label="`${r.roleName}（${r.roleKey}）`"
+          :value="r.roleKey"
+        />
+      </el-select>
       <el-input
+        v-else
         v-model="form.candidateGroups"
         placeholder="多個用逗號分隔：role1,role2"
         @change="updateFlowableProperty('candidateGroups', form.candidateGroups)"
       />
-      <div class="tip">
-        該角色下任意成員可認領辦理，如：managers、hr-group
-      </div>
+      <div class="tip">該角色下任意成員可認領辦理</div>
     </el-form-item>
 
     <el-divider content-position="left">其他配置</el-divider>
@@ -100,7 +149,8 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, watch } from 'vue'
+import { reactive, computed, watch, ref, onMounted } from 'vue'
+import { listHrUsers, listHrRoles, type HrUser, type HrRole } from '@/api/hrUser'
 
 const props = defineProps<{ element: any; modeler: any }>()
 
@@ -111,6 +161,22 @@ function convertToUserTask() {
   if (!bpmnReplace) return
   bpmnReplace.replaceElement(props.element, { type: 'bpmn:UserTask' })
 }
+
+const hrUsers = ref<HrUser[]>([])
+const hrRoles = ref<HrRole[]>([])
+const hrUsersAvailable = ref(false)
+const hrRolesAvailable = ref(false)
+
+onMounted(async () => {
+  try {
+    hrUsers.value = await listHrUsers()
+    hrUsersAvailable.value = hrUsers.value.length > 0
+  } catch { /* HR 系統不可用，降級文本輸入 */ }
+  try {
+    hrRoles.value = await listHrRoles()
+    hrRolesAvailable.value = hrRoles.value.length > 0
+  } catch { /* HR 系統不可用，降級文本輸入 */ }
+})
 
 const form = reactive({
   id: '',
@@ -124,6 +190,23 @@ const form = reactive({
   priority: '50'
 })
 
+// 多選拆分/合並輔助
+const candidateUsersArr = computed({
+  get: () => form.candidateUsers ? form.candidateUsers.split(',').map(s => s.trim()).filter(Boolean) : [],
+  set: (v: string[]) => { form.candidateUsers = v.join(',') }
+})
+const candidateGroupsArr = computed({
+  get: () => form.candidateGroups ? form.candidateGroups.split(',').map(s => s.trim()).filter(Boolean) : [],
+  set: (v: string[]) => { form.candidateGroups = v.join(',') }
+})
+
+function onCandidateUsersChange() {
+  updateFlowableProperty('candidateUsers', form.candidateUsers)
+}
+function onCandidateGroupsChange() {
+  updateFlowableProperty('candidateGroups', form.candidateGroups)
+}
+
 watch(() => props.element, (el) => {
   if (!el) return
   const bo = el.businessObject
@@ -136,7 +219,6 @@ watch(() => props.element, (el) => {
   form.dueDate = bo?.dueDate || ''
   form.priority = bo?.priority || '50'
 
-  // 根據已有值自動選擇分配方式
   if (bo?.candidateGroups) {
     form.assignType = 'candidateGroups'
   } else if (bo?.candidateUsers) {
@@ -146,7 +228,6 @@ watch(() => props.element, (el) => {
   }
 }, { immediate: true })
 
-// 切換分配方式時清除其他字段
 function onAssignTypeChange() {
   const modeling = props.modeler?.get('modeling')
   if (!modeling) return
